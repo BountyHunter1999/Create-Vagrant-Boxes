@@ -1,8 +1,3 @@
-variable "vm_name" {
-  type    = string
-  default = "my-vm"
-}
-
 variable "username" {
   type        = string
   description = "The username for authentication"
@@ -13,7 +8,7 @@ variable "password" {
   type        = string
   description = "The plaintext password for authentication"
   sensitive   = true
-  default = "packer123"
+  default     = "packer"
 }
 
 variable "iso_url" {
@@ -27,4 +22,30 @@ variable "iso_checksum" {
   type        = string
   description = "The checksum of the ISO image"
   default     = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"
+}
+
+
+variable "vm_name" {
+  type    = string
+  default = "ubuntu-latest"
+}
+
+variable "cpus" {
+  type    = string
+  default = "2"
+}
+
+variable "memory" {
+  type    = string
+  default = "4096"
+}
+
+variable "disk_size" {
+  type    = string
+  default = "40000"
+}
+
+variable "headless" {
+  type    = string
+  default = "false"
 }

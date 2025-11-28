@@ -1,37 +1,42 @@
 source "virtualbox-iso" "ubuntu-noble-amd64" {
   guest_os_type = "Ubuntu_64"
-  // iso_url = "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
 
-  boot_command         = ["<esc><esc><esc><esc>e<wait>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "<del><del><del><del><del><del><del><del>", "linux /casper/vmlinuz --- autoinstall ds=\"nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\"<enter><wait>", "initrd /casper/initrd<enter><wait>", "boot<enter>", "<enter><f10><wait>"]
+  cpus      = var.cpus
+  memory    = var.memory
+  disk_size = var.disk_size
+  // hard_drive_interface = "sata"
+  // iso_interface = "sata"
 
-  // boot_command = [
-  //   "c",
-  //   "linux /casper/vmlinuz — autoinstall ds=nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort}}/",
-  //   "",
-  //   "initrd /casper/initrd",
-  //   "",
-  //   "boot",
-  //   ""
-  // ]
-
-  boot_wait = "3s"
-
-  // http_directory = "./http"
-
-
-  # This doesn't enable SSH by default
-  # iso_url = "https://releases.ubuntu.com/noble/ubuntu-24.04.3-desktop-amd64.iso" 
-  # look into sha256sums
-  # iso_checksum = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
+  headless = var.headless
 
   iso_url      = var.iso_url
   iso_checksum = var.iso_checksum
+
+  vboxmanage = [
+    ["modifyvm", "{{.Name}}", "--vram", "32"],
+    ["modifyvm", "{{.Name}}", "--clipboard", "bidirectional"],
+    ["modifyvm", "{{.Name}}", "--draganddrop", "bidirectional"],
+    ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"]
+  ]
+
+  http_directory = "http"
+  boot_wait      = "5s"
+
+  boot_command = [
+    "<esc><wait>",
+    "linux /casper/vmlinuz ",
+    "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    " --- <enter><wait>",
+    "initrd /casper/initrd<enter>"
+  ]
 
   ssh_timeout      = "20m"
   ssh_port         = 22
   ssh_username     = var.username
   ssh_password     = var.password
   shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
+
+
 
   //   guest_additions_path = "VBoxGuestAdditions_8.0.26.iso"
   vm_name = "${var.vm_name}"
@@ -57,4 +62,18 @@ build {
       # Docker Install commands
     ]
   }
+
+  # cleanup and optimize
+  provisioner "shell" {
+    execute_command = "echo 'packer' | sudo -S bash '{{ .Path }}'"
+    script          = "scripts/cleanup.sh"
+  }
+
+  # Export as Vagrant box
+  post-processor "vagrant" {
+    keep_input_artifact = false
+    output = "builds/{{.Provider}}-${var.vm_name}.box"
+    compression_level = 9
+  }
+
 }

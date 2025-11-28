@@ -1,0 +1,29 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: packer-ubuntu
+    username: packer
+    # openssl passwd -6 packer
+    password: "$6$gR9KqwwZX9r4bulD$VUG0hxp3o0sdlEKBQB3AFFPcvDQJ7ehPgzo06zFzwnujPvfpDgCt7VB7OdeReCg7vDBmfwuR5CFmBuxKZw2Tp." # "packer" password
+  ssh:
+    install-server: true
+    allow-pw: true
+  packages:
+    - qemu-guest-agent
+    - open-vm-tools
+  storage:
+    layout:
+      name: lvm
+  updates: security
+  late-commands:
+    - curtin in-target --target=/target -- apt-get update
+    - curtin in-target --target=/target -- apt-get upgrade -y
+
+  # packages:
+  #   - git
+  #   - curl
+  #   - wget
