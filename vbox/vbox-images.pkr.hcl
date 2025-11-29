@@ -1,93 +1,57 @@
-  
 locals {
   http_directory = "http"
-  # virtualbox-iso
+  
+  # VirtualBox specific defaults
   chipset = var.chipset == null ? "ich9" : var.chipset
-  # Default values for boot configuration
-  default_boot_command = var.is_windows ? [] : ["<wait>e<wait><down><down><down><end> autoinstall ds=nocloud-net\\;s=http://{{.HTTPIP}}:{{.HTTPPort}}/ubuntu/<wait><f10><wait>"]
-  default_boot_wait    = var.is_windows ? "2m" : "5s"
-  # CD/Floppy configuration
-  cd_files = var.cd_files
+  
+  # Boot configuration
+  default_boot_command = var.boot_command
+  default_boot_wait    = var.boot_wait
+  
   # Communicator configuration
-  communicator = var.is_windows ? "winrm" : "ssh"
+  communicator = "ssh"
+  
   # VM configuration
   disk_size      = var.disk_size
   memory         = var.memory
   vm_name        = var.vm_name
   iso_target_path = null
+  
   # Shutdown configuration
-  shutdown_command = var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : "echo '${var.password}' | sudo -S shutdown -P now"
+  shutdown_command = "echo '${var.password}' | sudo -S shutdown -P now"
+  
   # SSH configuration with defaults
   ssh_username = var.ssh_username != null ? var.ssh_username : var.username
   ssh_password = var.ssh_password != null ? var.ssh_password : var.password
-  # WinRM configuration with defaults
-  winrm_username = var.winrm_username != null ? var.winrm_username : var.username
-  winrm_password = var.winrm_password != null ? var.winrm_password : var.password
-  gfx_controller = var.gfx_controller == null ? (
-    var.is_windows ? "vboxsvga" : "vboxsvga"
-  ) : var.gfx_controller
-  gfx_vram_size = var.gfx_controller == null ? (
-    var.is_windows ? 128 : 33
-  ) : var.gfx_vram_size
-  guest_additions_mode = var.guest_additions_mode == null ? (
-    var.is_windows ? "attach" : "upload"
-  ) : var.guest_additions_mode
-  hard_drive_interface = var.hard_drive_interface == null ? (
-    var.is_windows ? "sata" : "virtio"
-  ) : var.hard_drive_interface
-  iso_interface = var.iso_interface == null ? (
-    var.is_windows ? "sata" : "virtio"
-  ) : var.iso_interface
-  vboxmanage = var.vboxmanage == null ? (
-    var.is_windows ? (
-      var.os_arch == "aarch64" ? [
-        ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["modifyvm", "{{.Name}}", "--nic-type1", "usbnet"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
-        ] : [
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
-      ]
-      ) : (
-      var.os_arch == "aarch64" ? [
-        ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--graphicscontroller", "qemuramfb"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
-        ] : [
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
-      ]
-    )
-  ) : var.vboxmanage
-  nic_type = var.nic_type == null ? (
-    var.os_name == "freebsd" ? "82545EM" : null
-  ) : var.nic_type
+  
+  # Graphics configuration
+  gfx_controller = var.gfx_controller == null ? "vboxsvga" : var.gfx_controller
+  gfx_vram_size  = var.gfx_vram_size == null ? 33 : var.gfx_vram_size
+  
+  # Guest additions configuration
+  guest_additions_mode = var.guest_additions_mode == null ? "upload" : var.guest_additions_mode
+  
+  # Storage interface configuration
+  hard_drive_interface = var.hard_drive_interface == null ? "virtio" : var.hard_drive_interface
+  iso_interface        = var.iso_interface == null ? "virtio" : var.iso_interface
+  
+  # VBoxManage commands for Ubuntu
+  vboxmanage = var.vboxmanage == null ? [
+    ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+    ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
+    ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
+    ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
+    ["modifyvm", "{{.Name}}", "--mouse", "usb"],
+    ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
+    ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
+  ] : var.vboxmanage
+  
+  # NIC type
+  nic_type = var.nic_type == null ? null : var.nic_type
 }
 
 source "virtualbox-iso" "vm" {
-  # Virtualbox specific options
+  # VirtualBox specific options
   chipset                   = local.chipset
   firmware                  = var.firmware
   gfx_accelerate_3d         = var.gfx_accelerate_3d
@@ -105,11 +69,12 @@ source "virtualbox-iso" "vm" {
   usb                       = var.usb
   vboxmanage                = local.vboxmanage
   virtualbox_version_file   = var.virtualbox_version_file
+  
   # Source block common options
-  boot_command     = var.boot_command == null ? local.default_boot_command : var.boot_command
-  boot_wait        = var.boot_wait == null ? local.default_boot_wait : var.boot_wait
+  boot_command     = local.default_boot_command
+  boot_wait        = local.default_boot_wait
   cd_content       = var.cd_content
-  cd_files         = local.cd_files
+  cd_files         = var.cd_files
   cd_label         = var.cd_label
   cpus             = var.cpus
   communicator     = local.communicator
@@ -121,7 +86,6 @@ source "virtualbox-iso" "vm" {
   iso_target_path  = local.iso_target_path
   iso_url          = var.iso_url
   memory           = local.memory
-  // output_directory = "${local.output_directory}-virtualbox"
   shutdown_command = local.shutdown_command
   shutdown_timeout = var.shutdown_timeout
   ssh_password     = local.ssh_password

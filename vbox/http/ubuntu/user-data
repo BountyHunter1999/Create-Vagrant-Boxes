@@ -4,8 +4,9 @@ autoinstall:
   identity:
     hostname: vagrant
     username: vagrant
-    # mkpasswd -m sha-512 topsecret
-    password: "$6$rounds=4096$5CU3LEj/MQvbkfPb$LmKEF9pCfU8R.dA.GemgE/8GT6r9blge3grJvdsVTMFKyLEQwzEF3SGWqAzjawY/XHRpWj4fOiLBrRyxJhIRJ1"
+    # mkpasswd -m sha-512 --rounds=4096 (Then enter the password)
+    password: "$6$rounds=4096$20qV55jtarI5g3XB$5yUJS4mtMQ6hGY5JKk5kffCcO.nA717HqO.NcBG8W9gImE1CeEUCnTt569iNH01wsrGbYSWL5HtCC2urZ1iEs0"
+    # password: "$6$rounds=4096$5CU3LEj/MQvbkfPb$LmKEF9pCfU8R.dA.GemgE/8GT6r9blge3grJvdsVTMFKyLEQwzEF3SGWqAzjawY/XHRpWj4fOiLBrRyxJhIRJ1"
   early-commands:
     # otherwise packer tries to connect and exceed max attempts:
     - systemctl stop ssh.service
@@ -16,7 +17,7 @@ autoinstall:
   late-commands:
     - |
       if [ -f /target/etc/netplan/00-installer-config.yaml ]; then
-        'sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml'
+        sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml
       fi
     - echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/vagrant
     # Enable hyper-v daemons only if using hyper-v virtualization
