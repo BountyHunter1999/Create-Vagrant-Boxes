@@ -3,46 +3,67 @@
 - We'll use Packer to create a base box for VirtualBox and AWS.
 - Packer is a tool for creating virtual machine images, for multiple platforms.
 
-## 0. Install Packer
+## Stages
 
-```bash
-make install-packer
-```
+### Builder
 
-## 1. Create a Base Box
+- Responsible for creating the image
+- Different platform have different builders
+- When we want to create a custom image, we need a base image to start from
+- Builder will go to our target website and get the base image
+  - For example, if we are creating a custom AMI for AWS:
+    - Builder will go to the AWS website and get the base AMI
+    - It will spin up a EC2 instnace
+    - After we then customize the instance
 
-[Guide](https://developer.hashicorp.com/vagrant/docs/boxes/base)
+### Provisioner
 
-- These boxes contain the bare minimum required for Vagrant to function, are generally not made by repackaging an existing Vagrant environment (hence the "base" in the "base box")
-  - For example, the Ubuntu boxes provided by the Vagrant project (such as "bionic64") are base boxes.
-    - They were created from a minimal Ubuntu install from an ISO, rather than repackaging an existing environment.
-- Base Boxes are extremely useful for having a clean slate starting point from which to build future development environments.
-- Base Box may contain only the following:
+- After the builder has spin up an instance, in the provisioner section we'll provide instructions to configure/modify the machine
+- we then take snapshot of the instance and create an image from it
 
-  - Package amanger
-  - SSH
-  - SSH user so Vagrant can connect
-  - Chef, Puppet, etc. but not strictly required
-  - If we are making a box for VirtualBox, we will want to include the VirtualBox Guest Additions, so that shared folders work properly.
-    - But for AWS base box, it's not necessary.
+### Post Processors
 
-- `boot_command` is used to specify the command to boot the virtual machine.
-  - When we download an ISO, we need to specify the command to boot the virtual machine.
-  - For Ubuntu/Debian it is called preseeding
-  - For CentOS/RedHat it is called kickstart
-  - Example (from `vbox/vbox-images.pkr.hcl`):
-    - `<esc><esc><esc><esc>e<wait>` opens the GRUB entry editor.
-    - Multiple `<del>` sequences wipe the existing kernel line so we can type our own.
-    - `linux /casper/vmlinuz --- autoinstall ds="nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/"` boots the 24.04 live-server kernel and points autoinstall to Packer's HTTP server.
-    - `initrd /casper/initrd` loads the matching initrd.
-    - `boot` plus `<enter><f10>` exits the editor and starts the installer with those arguments.
+- Post processros runafter builders and provisioner and can be used to upload artifacts, compress and repackage files/images
 
-### VirtualBox Base Box
+## Mutable Infrastructure
 
-- It is important to add `shutdown_command`.
-- By default Packer halts the virtual machine and the file system may not be sync'd.
-- Thus, changes made in a provisioner might not be saved
+-> We create a server and we are mutating it over time.
 
-## VirtualBox Guest Additions
+1. Develop Code (Code)
+2. Spin up Server (Deploy)
+3. Configure Server (Configure)
 
-[Guide](https://developer.hashicorp.com/vagrant/docs/providers/virtualbox/boxes#virtualbox-guest-additions)
+- Install OS
+- Install packages/dependencies
+- Secure/Harden
+- Install Application
+- Upgrade/Patch
+
+- As we mutate the server, there will be configuration drift:
+  - We can use ansible to make changes but still there will still be a possibility of configuration drift
+
+## Immutable Infrastructure
+
+1. Develop Code (Code)
+2. Configure the server (Configure)
+3. Deploy the server (Deploy)
+
+- We create a server and we are not mutating it over time.
+- We create a server and we are not mutating it over time.
+
+- Flow:
+
+  1. We write v1.0.0 of our application
+  2. We'll use packer to create an image that will have our source code as well as all the necessary configuration changes that we may need to make our server work
+  3. When we deploy, we'll just use that image to deploy our server
+
+- Same goes for v2, we just follow the same process and deploy the v2 image, we then remove the older version servers.
+
+## Setup
+
+- Install Plugins:
+  - The Amazon plugin can be used with HashiCorp Packer to create custom images on AWS
+
+## Resources
+
+- [Github Resource From Bento](https://github.com/chef/bento)
