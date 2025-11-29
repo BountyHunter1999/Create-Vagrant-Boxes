@@ -1,6 +1,22 @@
 #cloud-config
 autoinstall:
   version: 1
+  storage:
+    config:
+     # identifier for the section, allows us to reference the disk when using other commands
+      - id: disk-vda
+      # specify the command we want to run. here it's disk
+        type: disk
+      # specify the partition table type
+      # when this is present a partition table of the specified type is created on the disk
+        ptable: gpt
+        # specify the path to the disk
+        # identify the disk by its path
+        path: /dev/vda
+        # specify the wipe command to run
+        # it destroys the content of disk or partitision
+        # superblock, superblock-recursive, 
+        wipe: superblock-recursive
   locale: en_US.UTF-8
   keyboard:
     layout: us
@@ -15,9 +31,6 @@ autoinstall:
   packages:
     - qemu-guest-agent
     - open-vm-tools
-  storage:
-    layout:
-      name: lvm
   updates: security
   late-commands:
     - curtin in-target --target=/target -- apt-get update
