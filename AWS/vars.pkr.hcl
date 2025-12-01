@@ -33,3 +33,9 @@ variable "ssh_timeout" {
   description = "The timeout for SSH authentication"
   default     = "15m"
 }
+
+variable "creator" {
+  type        = string
+  description = "The creator of the AMI"
+  default     = "packer"
+}

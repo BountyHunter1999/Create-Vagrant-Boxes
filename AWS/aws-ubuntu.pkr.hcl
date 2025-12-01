@@ -8,8 +8,9 @@ packer {
 }
 
 locals {
-  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
-  ami_name  = "${var.ami_prefix}-${local.timestamp}"
+  // timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+  today = regex_replace(timestamp(), "T.*", "")
+  ami_name  = "${var.ami_prefix}-${local.today}"
 }
 
 
@@ -37,6 +38,13 @@ source "amazon-ebs" "ubuntu" {
 
   ssh_username = var.ssh_username
   ssh_timeout  = var.ssh_timeout
+
+  tags = {
+    Name = local.ami_name
+    Creator = var.creator
+    CreatedWith = "Packer"
+    CreatedAt = local.today
+  }
 }
 
 // Provisioner
