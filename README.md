@@ -64,6 +64,56 @@
 - Install Plugins:
   - The Amazon plugin can be used with HashiCorp Packer to create custom images on AWS
 
+### Variables
+
+- `--var <var-name>=<value>` to pass a variable to Packer
+- Packer will automatically load any variable file that matches the name `*.auto.pkrvars.hcl` without the need to pass the file via the command line with `--var-file` flag.
+
+### Parallel Builds
+
+- Parallel build is a very useful and important feature of Packer.
+  - For example, Pakcer can build an Amazon AMI and a VirtualBox base box in parallel provisioned with the same scripts resulting in a near identical images.
+  - The AMI can be used for production and the VirtualBox base box can be used for development.
+- Create a source and then add the source to sources array in the build block.
+  - Sources don't need to be the same type, this tells Packer to build multiple images when that build is run.
+
+```hcl
+source "amazon-ebs" "ubuntu" {
+  ...
+}
+
+source "virtualbox-iso" "ubuntu" {
+  ...
+}
+
+build {
+  sources = [
+    "source.amazon-ebs.ubuntu",
+    "source.virtualbox-iso.ubuntu",
+  ]
+}
+```
+
+### Post Processors
+
+- Run only after Packer saves the instance as an image.
+- They vary in function:
+  - They can compress our artifact
+  - Upload our artifact into cloud
+  - Create a file that describes the artifact and build
+  - Create Vagrant boxes from our AMIs
+- We may add as many post-processors as we want using the `post-processor` syntax, but each one will start from the original artifact output by the builder, not the artifact created by previously-declared post-processor.
+
+- Use the `post-processors` block to create post-processing pipelines where the output of one post-processor becomes the input to another post-processor.
+
+```hcl
+post-processors {
+  post-processor "vagrant" {}
+  post-processor "compress" {}
+}
+```
+
+
 ## Resources
 
 - [Github Resource From Bento](https://github.com/chef/bento)
