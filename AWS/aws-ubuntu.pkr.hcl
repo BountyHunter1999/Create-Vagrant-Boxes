@@ -9,13 +9,9 @@ packer {
 
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+  ami_name  = "${var.ami_prefix}-${local.timestamp}"
 }
 
-variable "ami_prefix" {
-  type        = string
-  description = "The prefix for the AMI name"
-  default     = "packer-ubuntu"
-}
 
 // Bulder Section
 // https://developer.hashicorp.com/packer/integrations/hashicorp/amazon/latest/components/builder/ebs
@@ -23,22 +19,24 @@ source "amazon-ebs" "ubuntu" {
   // access_key = "LSIAQAAAAAAVNCBMPNSG"
   // secret_key = "test"
   // custom_endpoint_ec2 = "http://localhost.localstack.cloud:4566"
-  ami_name = "${var.ami_prefix}-${local.timestamp}"
+  ami_name = local.ami_name
 
-  // source_ami_filter {
-  //   filters = {
-  //     name = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server*"
-  //     root-device-type = "ebs"
-  //     virtualization-type = "hvm"
-  //   }
-  //   owners = ["amazon"]
-  //   most_recent = true
-  // }
+  source_ami_filter {
+    filters = {
+      name = var.ami_filter_name
+      root-device-type = "ebs"
+      virtualization-type = "hvm"
+    }
+    owners = ["amazon"]
+    most_recent = true
+  }
 
-  instance_type = "t2.micro"
-  region        = "us-east-1"
-  source_ami    = "ami-0c1f44f890950b53c"
-  ssh_username  = "ubuntu"
+  instance_type = var.instance_type
+  region        = var.region
+  // source_ami    = "ami-0c1f44f890950b53c"
+
+  ssh_username = var.ssh_username
+  ssh_timeout  = var.ssh_timeout
 }
 
 // Provisioner
@@ -57,15 +55,6 @@ build {
   //     ]
   // }
 
-  // provisioner "shell" {
-  //   inline = [
-  //     "echo Installing Docker",
-  //     "sudo apt-get update",
-  //     "sudo ",
-  //     "echo 'Docker installed successfully'",
-  //   ]
-  // }
-
   provisioner "shell" {
     # these scripts will run in isolation
     scripts = [
@@ -79,5 +68,9 @@ build {
 
     // take output of 1st post-processor and use it as input for the 2nd post-processor
     post-processor "compress" {}
+  }
+
+  post-processor "manifest" {
+    output = "builds/${local.ami_name}.json"
   }
 }

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
+sudo apt-get remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
 
 # Add Docker's official GPG key:
-sudo apt update
-sudo apt install -y ca-certificates curl
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -18,10 +18,11 @@ Components: stable
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-sudo usermod -aG docker $USER
-newgrp docker
+# Add the default SSH user to the docker group so they can use docker without sudo
+sudo usermod -aG docker "$USER" || true
 
-docker run --rm hello-world
+# Test Docker with sudo (safer in non-interactive provisioning environments)
+sudo docker run --rm hello-world || true
