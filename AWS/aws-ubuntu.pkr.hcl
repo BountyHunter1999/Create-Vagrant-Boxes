@@ -67,6 +67,8 @@ build {
     # these scripts will run in isolation
     scripts = [
       "${path.root}/scripts/ubuntu/install-docker.sh",
+      "${path.root}/scripts/ubuntu/install-jvm.sh",
+      "${path.root}/scripts/ubuntu/install-awscli.sh",
     ]
   }
 
