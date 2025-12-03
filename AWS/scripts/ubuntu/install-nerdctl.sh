@@ -36,6 +36,7 @@ echo "Restarting apparmor to apply the new rules"
 sudo systemctl restart apparmor.service
 
 containerd-rootless-setuptool.sh install
+containerd-rootless-setuptool.sh install-buildkit
 
 # Enable linger for the current user
 sudo loginctl enable-linger $USER
