@@ -9,8 +9,9 @@ packer {
 
 locals {
   // timestamp = regex_replace(timestamp(), "[- TZ:]", "")
-  today = regex_replace(timestamp(), "T.*", "")
-  ami_name  = "${var.ami_prefix}-${local.today}"
+  today    = regex_replace(timestamp(), "T.*", "")
+  suffix   = var.use_docker ? "docker" : var.use_nerdctl ? "nerdctl" : ""
+  ami_name = "${var.ami_prefix}-${local.today}-${local.suffix}"
 }
 
 
@@ -24,11 +25,11 @@ source "amazon-ebs" "ubuntu" {
 
   source_ami_filter {
     filters = {
-      name = var.ami_filter_name
-      root-device-type = "ebs"
+      name                = var.ami_filter_name
+      root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
-    owners = ["amazon"]
+    owners      = ["amazon"]
     most_recent = true
   }
 
@@ -40,10 +41,10 @@ source "amazon-ebs" "ubuntu" {
   ssh_timeout  = var.ssh_timeout
 
   tags = {
-    Name = local.ami_name
-    Creator = var.creator
+    Name        = local.ami_name
+    Creator     = var.creator
     CreatedWith = "Packer"
-    CreatedAt = local.today
+    CreatedAt   = local.today
   }
 }
 
@@ -65,16 +66,21 @@ build {
 
   provisioner "shell" {
     # these scripts will run in isolation
-    scripts = [
-      "${path.root}/scripts/ubuntu/install-docker.sh",
+    scripts = compact([
+      var.use_docker ? "${path.root}/scripts/ubuntu/install-docker.sh" : "",
+      var.use_nerdctl ? "${path.root}/scripts/ubuntu/install-nerdctl.sh" : "",
       "${path.root}/scripts/ubuntu/install-jvm.sh",
       "${path.root}/scripts/ubuntu/install-awscli.sh",
-    ]
+    ])
   }
 
   post-processors {
     // Take the image we created in AWS and also create a Vagrant box from it to be used locally
-    post-processor "vagrant" {}
+    post-processor "vagrant" {
+      output              = "builds/${local.ami_name}.box"
+      compression_level   = 9
+      keep_input_artifact = false
+    }
 
     // take output of 1st post-processor and use it as input for the 2nd post-processor
     post-processor "compress" {}

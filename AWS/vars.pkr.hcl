@@ -39,3 +39,15 @@ variable "creator" {
   description = "The creator of the AMI"
   default     = "packer"
 }
+
+variable "use_docker" {
+  type        = bool
+  description = "Whether to install Docker"
+  default     = false
+}
+
+variable "use_nerdctl" {
+  type        = bool
+  description = "Whether to install Nerdctl"
+  default     = false
+}
